@@ -1,0 +1,25 @@
+[package]
+name = "web3-anywhere-key-man"
+version = "0.1.0"
+edition = "2021"
+authors = ["Russell Wong"]
+
+[dependencies]
+web3-anywhere-crypto = { path = "../crypto" }
+
+hashbrown = "0.12"
+log = "0.4"
+thiserror = "1.0.31"
+sha2 = "0.10.2"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+getrandom = { version = "0.2", features = ["js"] }
+js-sys = "0.3.59"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies.web-sys]
+version = "0.3.58"
+features = ["Window", "Storage"]
+
+[features]
+default = ["local_storage"]
+local_storage = []

@@ -1,0 +1,10 @@
+[package]
+name = "web3-anywhere"
+version = "0.1.0"
+edition = "2021"
+authors = ["Russell Wong"]
+
+[dependencies]
+web3-anywhere-crypto = { path = "./crypto" }
+web3-anywhere-key-man = { path = "./key-man" }
+web3-anywhere-near = { path = "./near" }

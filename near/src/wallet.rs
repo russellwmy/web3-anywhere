@@ -1,11 +1,13 @@
+#[cfg(all(target_arch = "wasm32", feature = "local_storage"))]
 use std::collections::HashMap;
 
+#[cfg(all(target_arch = "wasm32", feature = "local_storage"))]
 use borsh::BorshSerialize;
 use url::Url;
 
 use crate::{
     auth_data::AuthData,
-    crypto::{serialize::to_base64, KeyType, PublicKey},
+    crypto::{serialize::to_base64, KeyType, PublicKey, Signature},
     key_man::{KeyPair, KeyStore, Signer, StorageKey},
     primitives::types::AccountId,
     Account,
@@ -14,7 +16,7 @@ use crate::{
 };
 
 const LOGIN_WALLET_URL_SUFFIX: &str = "/login/";
-const MULTISIG_HAS_METHOD: &str = "add_request_and_confirm";
+// const MULTISIG_HAS_METHOD: &str = "add_request_and_confirm";
 const LOCAL_STORAGE_KEY_SUFFIX: &str = "_wallet_auth_key";
 const PENDING_ACCESS_KEY_PREFIX: &str = "pending_key";
 
@@ -267,5 +269,15 @@ impl Wallet {
                 crate::browser::replace_url(parsed_url.as_str());
             }
         }
+    }
+    pub fn sign_message(self, message: &[u8]) -> Signature {
+        let signer = self.config.signer.clone().expect("Missing signer");
+        let account_id = self.get_account_id().expect("Missing account id");
+        let signature = signer.sign_message(
+            message,
+            StorageKey::new_near_key(&self.network, &account_id),
+        );
+
+        signature
     }
 }

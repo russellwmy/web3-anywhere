@@ -1,7 +1,5 @@
 use std::io::{Error, ErrorKind};
 
-use sha2::Digest;
-
 use crate::{
     crypto::{KeyType, PublicKey, Signature},
     KeyPair,
@@ -50,13 +48,11 @@ impl InMemorySigner {
     }
 
     pub fn sign_message(&self, message: &[u8], storage_key: StorageKey) -> Signature {
-        let hash = sha2::Sha256::digest(message);
-        let hash = hash.as_slice();
         let key_pair = self
             .key_store
             .get_key(storage_key)
             .expect("keypair not found");
 
-        key_pair.sign(hash)
+        key_pair.sign(message)
     }
 }

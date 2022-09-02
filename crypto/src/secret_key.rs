@@ -32,8 +32,8 @@ impl SecretKey {
         match key_type {
             KeyType::ED25519 => {
                 let mut csprng = rand_07::rngs::OsRng {};
-                let key_pair = ed25519_dalek::Keypair::generate(&mut csprng);
-                SecretKey::ED25519(ED25519SecretKey(key_pair.to_bytes()))
+                let secret_key = ed25519_dalek::SecretKey::generate(&mut csprng);
+                SecretKey::ED25519(ED25519SecretKey(*secret_key.as_bytes()))
             }
             KeyType::SECP256K1 => {
                 SecretKey::SECP256K1(libsecp256k1::SecretKey::random(&mut rand::rngs::OsRng))
@@ -44,8 +44,13 @@ impl SecretKey {
     pub fn sign(&self, data: &[u8]) -> Signature {
         match &self {
             SecretKey::ED25519(secret_key) => {
-                let keypair = ed25519_dalek::Keypair::from_bytes(&secret_key.0).unwrap();
-                Signature::ED25519(keypair.sign(data))
+                let secret_key = ed25519_dalek::SecretKey::from_bytes(&secret_key.0).unwrap();
+                let public_key: ed25519_dalek::PublicKey = (&secret_key).into();
+                let mut key_pair_bytes = secret_key.to_bytes().to_vec();
+                key_pair_bytes.extend(public_key.to_bytes().to_vec());
+
+                let key_pair = ed25519_dalek::Keypair::from_bytes(&key_pair_bytes).unwrap();
+                Signature::ED25519(key_pair.sign(data))
             }
 
             SecretKey::SECP256K1(secret_key) => {
@@ -63,11 +68,12 @@ impl SecretKey {
 
     pub fn public_key(&self) -> PublicKey {
         match &self {
-            SecretKey::ED25519(secret_key) => PublicKey::ED25519(ED25519PublicKey(
-                secret_key.0[ed25519_dalek::SECRET_KEY_LENGTH..]
-                    .try_into()
-                    .unwrap(),
-            )),
+            SecretKey::ED25519(secret_key) => {
+                let secret_key = ed25519_dalek::SecretKey::from_bytes(&secret_key.0).unwrap();
+                let public_key: ed25519_dalek::PublicKey = (&secret_key).into();
+                
+                PublicKey::ED25519(ED25519PublicKey(public_key.to_bytes()))
+            }
             SecretKey::SECP256K1(secret_key) => {
                 let pk = libsecp256k1::PublicKey::from_secret_key(secret_key);
                 let serialized = pk.serialize();
@@ -105,15 +111,15 @@ impl FromStr for SecretKey {
         let (key_type, key_data) = split_key_type_data(s)?;
         match key_type {
             KeyType::ED25519 => {
-                let mut array = [0; ed25519_dalek::KEYPAIR_LENGTH];
+                let mut array = [0; ed25519_dalek::SECRET_KEY_LENGTH];
                 let length = bs58::decode(key_data).into(&mut array[..]).map_err(|err| {
                     Self::Err::InvalidData {
                         error_message: err.to_string(),
                     }
                 })?;
-                if length != ed25519_dalek::KEYPAIR_LENGTH {
+                if length != ed25519_dalek::SECRET_KEY_LENGTH {
                     return Err(Self::Err::InvalidLength {
-                        expected_length: ed25519_dalek::KEYPAIR_LENGTH,
+                        expected_length: ed25519_dalek::SECRET_KEY_LENGTH,
                         received_length: length,
                     });
                 }

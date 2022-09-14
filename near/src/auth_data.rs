@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, convert::TryFrom};
 
 use crate::primitives::types::AccountId;
 
@@ -8,20 +8,28 @@ pub struct AuthData {
     pub all_keys: Vec<String>,
 }
 
-impl AuthData {
-    pub fn parse(map: HashMap<String, String>) -> Self {
-        let account_id = map.get("account_id").unwrap().to_string().parse().unwrap();
-        let all_keys = map
-            .get("all_keys")
-            .unwrap()
-            .to_string()
-            .split(",")
-            .map(|s| s.to_string())
-            .collect::<Vec<String>>();
+impl TryFrom<HashMap<String, String>> for AuthData {
+    type Error = &'static str;
 
-        Self {
-            account_id,
-            all_keys,
+    fn try_from(map: HashMap<String, String>) -> Result<Self, Self::Error> {
+        let account_id_value = map.get("account_id");
+        let all_keys_value = map.get("all_keys");
+
+        if account_id_value.is_none() || all_keys_value.is_none() {
+            Err("Missing values")
+        } else {
+            let account_id = account_id_value.unwrap().to_string().parse().unwrap();
+            let all_keys = all_keys_value
+                .unwrap()
+                .to_string()
+                .split(",")
+                .map(|s| s.to_string())
+                .collect::<Vec<String>>();
+
+            Ok(Self {
+                account_id,
+                all_keys,
+            })
         }
     }
 }

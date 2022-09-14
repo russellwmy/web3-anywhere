@@ -1,13 +1,10 @@
 use borsh::{BorshDeserialize, BorshSerialize};
+use web3_anywhere_crypto::PublicKey;
 
 use crate::{
-    crypto::PublicKey,
-    primitives::{
-        hash::CryptoHash,
-        types::{AccountId, Nonce},
-    },
-    Action,
-    TransactionBuilder,
+    actions::Action,
+    hash::{hash, CryptoHash},
+    types::{AccountId, Nonce},
 };
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
@@ -24,12 +21,14 @@ pub struct Transaction {
     pub receiver_id: AccountId,
     /// The hash of the block in the blockchain on top of which the given transaction is valid
     pub block_hash: CryptoHash,
-    // A list of actions to be applied
+    /// A list of actions to be applied
     pub actions: Vec<Action>,
 }
 
 impl Transaction {
-    pub fn builder() -> TransactionBuilder {
-        TransactionBuilder::default()
+    /// Computes a hash of the transaction for signing and size of serialized transaction
+    pub fn get_hash_and_size(&self) -> (CryptoHash, u64) {
+        let bytes = self.try_to_vec().expect("Failed to deserialize");
+        (hash(&bytes), bytes.len() as u64)
     }
 }

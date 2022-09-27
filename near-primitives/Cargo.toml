@@ -15,7 +15,7 @@ chrono = { version = "0.4.19", features = ["serde"] }
 derive_more = "0.99.17"
 easy-ext = "1"
 log = "0.4"
-near-primitives-core = { git = "https://github.com/near/nearcore.git" }
+near-primitives-core = { git = "https://github.com/near/nearcore.git",  branch = "1.29.0"}
 primitive-types = "0.11.1"
 rand = "0.8.5"
 serde = { version = "1", features = ["derive"] }
